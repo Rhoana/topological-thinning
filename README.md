@@ -24,3 +24,6 @@ segmentations/SNEMI3D.h5 main
 where the resolution represents the imaging resolution of the dataset and the segmentation filename is a path to the dataset with the accompanying h5 dataset name.
 
 
+## Example Script
+
+There is an example script at `examples/generate_skeleton.py`.
