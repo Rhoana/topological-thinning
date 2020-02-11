@@ -127,3 +127,6 @@ dmypy.json
 
 # Pyre type checker
 .pyre/
+
+skeletonization/generate_skeletons.cpp
+transforms/seg2seg.cpp
