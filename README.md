@@ -4,6 +4,7 @@
 git clone https://github.com/Rhoana/topological_thinning.git
 cd topological_thinning
 conda create -n skeleton_env --file requirements.txt
+source activate skeleton_env
 cd skeletonization
 python setup.py build_ext --inplace
 cd ../transforms
