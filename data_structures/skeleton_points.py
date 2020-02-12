@@ -2,7 +2,7 @@ import struct
 import numpy as np
 
 
-from ibex.utilities.constants import *
+from topological_thinning.utilities.constants import *
 
 
 
