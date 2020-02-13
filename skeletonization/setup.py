@@ -7,7 +7,7 @@ extensions = [
         name='generate_skeletons',
         include_dirs=[np.get_include()],
         sources=['generate_skeletons.pyx', 'cpp-thinning.cpp', 'cpp-upsample.cpp'],
-        extra_compile_args=['-O4', '-std=c++0x'],
+        extra_compile_args=['-O4', '-std=c++11'],
         language='c++'
     )
 ]
