@@ -1,4 +1,6 @@
 #include <math.h>
+#include <inttypes.h>
+#include <algorithm>
 #include <unordered_set>
 
 
@@ -9,10 +11,10 @@
 
 
 
-void CppDownsampleMapping(const char *prefix, long *segmentation, float input_resolution[3], long output_resolution[3], long input_grid_size[3])
+void CppDownsampleMapping(const char *prefix, int64_t *segmentation, float input_resolution[3], int64_t output_resolution[3], int64_t input_grid_size[3])
 {
-    // get the number of entries 
-    long input_nentries = input_grid_size[IB_Z] * input_grid_size[IB_Y] * input_grid_size[IB_X];
+    // get the number of entries
+    int64_t input_nentries = input_grid_size[IB_Z] * input_grid_size[IB_Y] * input_grid_size[IB_X];
 
     // get downsample ratios
     float zdown = ((float) output_resolution[IB_Z]) / input_resolution[IB_Z];
@@ -20,35 +22,35 @@ void CppDownsampleMapping(const char *prefix, long *segmentation, float input_re
     float xdown = ((float) output_resolution[IB_X]) / input_resolution[IB_X];
 
     // get the output resolution size
-    long output_grid_size[3];
-    output_grid_size[IB_Z] = (long) ceil(input_grid_size[IB_Z] / zdown);
-    output_grid_size[IB_Y] = (long) ceil(input_grid_size[IB_Y] / ydown);
-    output_grid_size[IB_X] = (long) ceil(input_grid_size[IB_X] / xdown);
-    long output_sheet_size = output_grid_size[IB_Y] * output_grid_size[IB_X];
-    long output_row_size = output_grid_size[IB_X];
+    int64_t output_grid_size[3];
+    output_grid_size[IB_Z] = (int64_t) ceil(input_grid_size[IB_Z] / zdown);
+    output_grid_size[IB_Y] = (int64_t) ceil(input_grid_size[IB_Y] / ydown);
+    output_grid_size[IB_X] = (int64_t) ceil(input_grid_size[IB_X] / xdown);
+    int64_t output_sheet_size = output_grid_size[IB_Y] * output_grid_size[IB_X];
+    int64_t output_row_size = output_grid_size[IB_X];
 
-    long max_segment = 0;
-    for (long iv = 0; iv < input_nentries; ++iv)
+    int64_t max_segment = 0;
+    for (int64_t iv = 0; iv < input_nentries; ++iv)
         if (segmentation[iv] > max_segment) max_segment = segmentation[iv];
     max_segment++;
 
     // create a set for each segment of downsampled locations
-    std::unordered_set<long> *downsample_sets = new std::unordered_set<long>[max_segment];
-    for (long iv = 0; iv < max_segment; ++iv)
-        downsample_sets[iv] = std::unordered_set<long>();
+    std::unordered_set<int64_t> *downsample_sets = new std::unordered_set<int64_t>[max_segment];
+    for (int64_t iv = 0; iv < max_segment; ++iv)
+        downsample_sets[iv] = std::unordered_set<int64_t>();
 
-    long index = 0;
-    for (long iz = 0; iz < input_grid_size[IB_Z]; ++iz) {
-        for (long iy = 0; iy < input_grid_size[IB_Y]; ++iy) {
-            for (long ix = 0; ix < input_grid_size[IB_X]; ++ix, ++index) {
-                long segment = segmentation[index];
+    int64_t index = 0;
+    for (int64_t iz = 0; iz < input_grid_size[IB_Z]; ++iz) {
+        for (int64_t iy = 0; iy < input_grid_size[IB_Y]; ++iy) {
+            for (int64_t ix = 0; ix < input_grid_size[IB_X]; ++ix, ++index) {
+                int64_t segment = segmentation[index];
                 if (!segment) continue;
 
-                long iw = (long) (iz / zdown);
-                long iv = (long) (iy / ydown);
-                long iu = (long) (ix / xdown);
+                int64_t iw = (int64_t) (iz / zdown);
+                int64_t iv = (int64_t) (iy / ydown);
+                int64_t iu = (int64_t) (ix / xdown);
 
-                long downsample_index = iw * output_sheet_size + iv * output_row_size + iu;
+                int64_t downsample_index = iw * output_sheet_size + iv * output_row_size + iu;
                 downsample_sets[segment].insert(downsample_index);
             }
         }
@@ -71,50 +73,50 @@ void CppDownsampleMapping(const char *prefix, long *segmentation, float input_re
     if (!ufp) { fprintf(stderr, "Failed to write to %s\n", upsample_filename); exit(-1); }
 
     // write the number of segments
-    fwrite(&output_grid_size[IB_Z], sizeof(long), 1, dfp);
-    fwrite(&output_grid_size[IB_Y], sizeof(long), 1, dfp);
-    fwrite(&output_grid_size[IB_X], sizeof(long), 1, dfp);
-    fwrite(&max_segment, sizeof(long), 1, dfp);
+    fwrite(&output_grid_size[IB_Z], sizeof(int64_t), 1, dfp);
+    fwrite(&output_grid_size[IB_Y], sizeof(int64_t), 1, dfp);
+    fwrite(&output_grid_size[IB_X], sizeof(int64_t), 1, dfp);
+    fwrite(&max_segment, sizeof(int64_t), 1, dfp);
 
     // write the output file size of the upsample version
-    fwrite(&(input_grid_size[IB_Z]), sizeof(long), 1, ufp);
-    fwrite(&(input_grid_size[IB_Y]), sizeof(long), 1, ufp);
-    fwrite(&(input_grid_size[IB_X]), sizeof(long), 1, ufp);
-    fwrite(&max_segment, sizeof(long), 1, ufp);
+    fwrite(&(input_grid_size[IB_Z]), sizeof(int64_t), 1, ufp);
+    fwrite(&(input_grid_size[IB_Y]), sizeof(int64_t), 1, ufp);
+    fwrite(&(input_grid_size[IB_X]), sizeof(int64_t), 1, ufp);
+    fwrite(&max_segment, sizeof(int64_t), 1, ufp);
 
     // output values for downsampling
-    for (long label = 0; label < max_segment; ++label) {
+    for (int64_t label = 0; label < max_segment; ++label) {
         // write the size for this set
-        long nelements = downsample_sets[label].size();
-        fwrite(&nelements, sizeof(long), 1, dfp);
-        fwrite(&nelements, sizeof(long), 1, ufp);
-        for (std::unordered_set<long>::iterator it = downsample_sets[label].begin(); it != downsample_sets[label].end(); ++it) {
-            long element = *it;
-            fwrite(&element, sizeof(long), 1, dfp);
+        int64_t nelements = downsample_sets[label].size();
+        fwrite(&nelements, sizeof(int64_t), 1, dfp);
+        fwrite(&nelements, sizeof(int64_t), 1, ufp);
+        for (std::unordered_set<int64_t>::iterator it = downsample_sets[label].begin(); it != downsample_sets[label].end(); ++it) {
+            int64_t element = *it;
+            fwrite(&element, sizeof(int64_t), 1, dfp);
 
-            long iz = element / (output_grid_size[IB_Y] * output_grid_size[IB_X]);
-            long iy = (element - iz * output_grid_size[IB_Y] * output_grid_size[IB_X]) / output_grid_size[IB_X];
-            long ix = element % output_grid_size[IB_X];
+            int64_t iz = element / (output_grid_size[IB_Y] * output_grid_size[IB_X]);
+            int64_t iy = (element - iz * output_grid_size[IB_Y] * output_grid_size[IB_X]) / output_grid_size[IB_X];
+            int64_t ix = element % output_grid_size[IB_X];
 
-            long zmin = (long) (zdown * iz);
-            long ymin = (long) (ydown * iy);
-            long xmin = (long) (xdown * ix);
+            int64_t zmin = (int64_t) (zdown * iz);
+            int64_t ymin = (int64_t) (ydown * iy);
+            int64_t xmin = (int64_t) (xdown * ix);
 
-            long zmax = std::min((long) ceil(zdown * (iz + 1) + 1), input_grid_size[IB_Z]);
-            long ymax = std::min((long) ceil(ydown * (iy + 1) + 1), input_grid_size[IB_Y]);
-            long xmax = std::min((long) ceil(xdown * (ix + 1) + 1), input_grid_size[IB_X]);
+            int64_t zmax = std::min((int64_t) ceil(zdown * (iz + 1) + 1), input_grid_size[IB_Z]);
+            int64_t ymax = std::min((int64_t) ceil(ydown * (iy + 1) + 1), input_grid_size[IB_Y]);
+            int64_t xmax = std::min((int64_t) ceil(xdown * (ix + 1) + 1), input_grid_size[IB_X]);
 
             double closest_to_center = input_grid_size[IB_Z] * input_grid_size[IB_Y] * input_grid_size[IB_X];
-            long upsample_index = -1;
+            int64_t upsample_index = -1;
 
-            long zcenter = (zmax + zmin) / 2;
-            long ycenter = (ymax + ymin) / 2;
-            long xcenter = (xmax + xmin) / 2;
+            int64_t zcenter = (zmax + zmin) / 2;
+            int64_t ycenter = (ymax + ymin) / 2;
+            int64_t xcenter = (xmax + xmin) / 2;
 
-            for (long iw = zmin; iw < zmax; ++iw) {
-                for (long iv = ymin; iv < ymax; ++iv) {
-                    for (long iu = xmin; iu < xmax; ++iu) {
-                        long linear_index = iw * input_grid_size[IB_Y] * input_grid_size[IB_X] + iv * input_grid_size[IB_X] + iu;
+            for (int64_t iw = zmin; iw < zmax; ++iw) {
+                for (int64_t iv = ymin; iv < ymax; ++iv) {
+                    for (int64_t iu = xmin; iu < xmax; ++iu) {
+                        int64_t linear_index = iw * input_grid_size[IB_Y] * input_grid_size[IB_X] + iv * input_grid_size[IB_X] + iu;
 
 
                         // find the closest point to the center
@@ -129,7 +131,7 @@ void CppDownsampleMapping(const char *prefix, long *segmentation, float input_re
                 }
             }
 
-            fwrite(&upsample_index, sizeof(long), 1, ufp);
+            fwrite(&upsample_index, sizeof(int64_t), 1, ufp);
         }
     }
 

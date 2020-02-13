@@ -28,19 +28,19 @@ static unsigned char *lut_isthmus;
 
 // global variables
 
-static long grid_size[3];
-static long nentries;
-static long sheet_size;
-static long row_size;
+static int64_t grid_size[3];
+static int64_t nentries;
+static int64_t sheet_size;
+static int64_t row_size;
 static unsigned char *segmentation = NULL;
 
 
 
 // mask variables for bitwise operations
 
-static long long_mask[26];
+static int64_t long_mask[26];
 static unsigned char char_mask[8];
-static long offsets[26];
+static int64_t offsets[26];
 
 
 
@@ -120,7 +120,7 @@ static void PopulateOffsets(void)
 
 
 
-static void IndexToIndices(long iv, long &ix, long &iy, long &iz)
+static void IndexToIndices(int64_t iv, int64_t &ix, int64_t &iy, int64_t &iz)
 {
     iz = iv / sheet_size;
     iy = (iv - iz * sheet_size) / row_size;
@@ -129,7 +129,7 @@ static void IndexToIndices(long iv, long &ix, long &iy, long &iz)
 
 
 
-static long IndicesToIndex(long ix, long iy, long iz)
+static int64_t IndicesToIndex(int64_t ix, int64_t iy, int64_t iz)
 {
     return iz * sheet_size + iy * row_size + ix;
 }
@@ -140,7 +140,7 @@ static long IndicesToIndex(long ix, long iy, long iz)
 // very simple double linked list data structure
 
 typedef struct {
-    long iv, ix, iy, iz;
+    int64_t iv, ix, iy, iz;
     void *next;
     void *prev;
 } ListElement;
@@ -151,7 +151,7 @@ typedef struct {
 } List;
 
 typedef struct {
-    long iv, ix, iy, iz;
+    int64_t iv, ix, iy, iz;
 } Voxel;
 
 typedef struct {
@@ -175,7 +175,7 @@ List surface_voxels;
 
 
 
-static void NewSurfaceVoxel(long iv, long ix, long iy, long iz)
+static void NewSurfaceVoxel(int64_t iv, int64_t ix, int64_t iy, int64_t iz)
 {
     ListElement *LE = new ListElement();
     LE->iv = iv;
@@ -193,7 +193,7 @@ static void NewSurfaceVoxel(long iv, long ix, long iy, long iz)
 
 
 
-static void RemoveSurfaceVoxel(ListElement *LE) 
+static void RemoveSurfaceVoxel(ListElement *LE)
 {
     ListElement *LE2;
     if (surface_voxels.first == LE) surface_voxels.first = LE->next;
@@ -212,7 +212,7 @@ static void RemoveSurfaceVoxel(ListElement *LE)
 
 
 
-static void CreatePointList(PointList *s) 
+static void CreatePointList(PointList *s)
 {
     s->head = NULL;
     s->tail = NULL;
@@ -221,7 +221,7 @@ static void CreatePointList(PointList *s)
 
 
 
-static void AddToList(PointList *s, Voxel e, ListElement *ptr) 
+static void AddToList(PointList *s, Voxel e, ListElement *ptr)
 {
     Cell *newcell = new Cell();
     newcell->v = e;
@@ -318,10 +318,10 @@ static void InitializeLookupTables(const char *lookup_table_directory)
 
 static void CollectSurfaceVoxels(void)
 {
-    for (long iz = 1; iz < grid_size[IB_Z] - 1; ++iz) {
-        for (long iy = 1; iy < grid_size[IB_Y] - 1; ++iy) {
-            for (long ix = 1; ix < grid_size[IB_X] - 1; ++ix) {
-                long iv = IndicesToIndex(ix, iy, iz);
+    for (int64_t iz = 1; iz < grid_size[IB_Z] - 1; ++iz) {
+        for (int64_t iy = 1; iy < grid_size[IB_Y] - 1; ++iy) {
+            for (int64_t ix = 1; ix < grid_size[IB_X] - 1; ++ix) {
+                int64_t iv = IndicesToIndex(ix, iy, iz);
                 if (segmentation[iv]) {
                     if (!segmentation[IndicesToIndex(ix, iy, iz - 1)] ||
                             !segmentation[IndicesToIndex(ix, iy, iz + 1)] ||
@@ -341,12 +341,12 @@ static void CollectSurfaceVoxels(void)
 
 
 
-static unsigned int Collect26Neighbors(long ix, long iy, long iz)
+static unsigned int Collect26Neighbors(int64_t ix, int64_t iy, int64_t iz)
 {
     unsigned int neighbors = 0;
-    long index = IndicesToIndex(ix, iy, iz);
+    int64_t index = IndicesToIndex(ix, iy, iz);
 
-    for (long iv = 0; iv < 26; ++iv) {
+    for (int64_t iv = 0; iv < 26; ++iv) {
         if (segmentation[index + offsets[iv]]) neighbors |= long_mask[iv];
     }
 
@@ -373,14 +373,14 @@ static void DetectSimpleBorderPoints(PointList *deletable_points, int direction)
 {
     ListElement *LE = (ListElement *)surface_voxels.first;
     while (LE != NULL) {
-        long iv = LE->iv;
-        long ix = LE->ix;
-        long iy = LE->iy;
-        long iz = LE->iz;
+        int64_t iv = LE->iv;
+        int64_t ix = LE->ix;
+        int64_t iy = LE->iy;
+        int64_t iz = LE->iz;
 
         // not an isthmus
         if (segmentation[iv] == 2) {
-            long value = 0;
+            int64_t value = 0;
             switch (direction) {
             case UP: {
                 value = segmentation[IndicesToIndex(ix, iy - 1, iz)];
@@ -434,9 +434,9 @@ static void DetectSimpleBorderPoints(PointList *deletable_points, int direction)
 
 
 
-static long ThinningIterationStep(void)
+static int64_t ThinningIterationStep(void)
 {
-    long changed = 0;
+    int64_t changed = 0;
 
     // iterate through every direction
     for (int direction = 0; direction < NTHINNING_DIRECTIONS; ++direction) {
@@ -449,10 +449,10 @@ static long ThinningIterationStep(void)
         while (deletable_points.length) {
             Voxel voxel = GetFromList(&deletable_points, &ptr);
 
-            long iv = voxel.iv;
-            long ix = voxel.ix;
-            long iy = voxel.iy;
-            long iz = voxel.iz;
+            int64_t iv = voxel.iv;
+            int64_t ix = voxel.ix;
+            int64_t iy = voxel.iy;
+            int64_t iz = voxel.iz;
 
             unsigned int neighbors = Collect26Neighbors(ix, iy, iz);
             if (Simple26_6(neighbors)) {
@@ -505,7 +505,7 @@ static void SequentialThinning(void)
     // create a vector of surface voxels
     CollectSurfaceVoxels();
     int iteration = 0;
-    long changed = 0;
+    int64_t changed = 0;
     do {
         changed = ThinningIterationStep();
         iteration++;
@@ -513,16 +513,16 @@ static void SequentialThinning(void)
 }
 
 
-static bool IsEndpoint(long iv)
+static bool IsEndpoint(int64_t iv)
 {
-    long ix, iy, iz;
+    int64_t ix, iy, iz;
     IndexToIndices(iv, ix, iy, iz);
 
     short nnneighbors = 0;
-    for (long iw = iz - 1; iw <= iz + 1; ++iw) {
-        for (long iv = iy - 1; iv <= iy + 1; ++iv) {
-            for (long iu = ix - 1; iu <= ix + 1; ++iu) {
-                long linear_index = IndicesToIndex(iu, iv, iw);
+    for (int64_t iw = iz - 1; iw <= iz + 1; ++iw) {
+        for (int64_t iv = iy - 1; iv <= iy + 1; ++iv) {
+            for (int64_t iu = ix - 1; iu <= ix + 1; ++iu) {
+                int64_t linear_index = IndicesToIndex(iu, iv, iw);
                 if (segmentation[linear_index]) nnneighbors++;
             }
         }
@@ -535,7 +535,7 @@ static bool IsEndpoint(long iv)
 
 
 
-void CppTopologicalThinning(const char *prefix, long skeleton_resolution[3], const char *lookup_table_directory)
+void CppTopologicalThinning(const char *prefix, int64_t skeleton_resolution[3], const char *lookup_table_directory)
 {
     // initialize all of the lookup tables
     InitializeLookupTables(lookup_table_directory);
@@ -549,9 +549,9 @@ void CppTopologicalThinning(const char *prefix, long skeleton_resolution[3], con
     if (!rfp) { fprintf(stderr, "Failed to read %s\n", input_filename); exit(-1); }
 
     // read the size and number of segments
-    if (fread(&(grid_size[IB_Z]), sizeof(long), 1, rfp) != 1) { fprintf(stderr, "Failed to read %s\n", input_filename); exit(-1); }
-    if (fread(&(grid_size[IB_Y]), sizeof(long), 1, rfp) != 1) { fprintf(stderr, "Failed to read %s\n", input_filename); exit(-1); }
-    if (fread(&(grid_size[IB_X]), sizeof(long), 1, rfp) != 1) { fprintf(stderr, "Failed to read %s\n", input_filename); exit(-1); }
+    if (fread(&(grid_size[IB_Z]), sizeof(int64_t), 1, rfp) != 1) { fprintf(stderr, "Failed to read %s\n", input_filename); exit(-1); }
+    if (fread(&(grid_size[IB_Y]), sizeof(int64_t), 1, rfp) != 1) { fprintf(stderr, "Failed to read %s\n", input_filename); exit(-1); }
+    if (fread(&(grid_size[IB_X]), sizeof(int64_t), 1, rfp) != 1) { fprintf(stderr, "Failed to read %s\n", input_filename); exit(-1); }
 
     // open the output filename
     char output_filename[4096];
@@ -561,14 +561,14 @@ void CppTopologicalThinning(const char *prefix, long skeleton_resolution[3], con
     if (!wfp) { fprintf(stderr, "Failed to write to %s\n", output_filename); exit(-1); }
 
     // go through all labels
-    long max_label;
-    if (fread(&max_label, sizeof(long), 1, rfp) != 1) { fprintf(stderr, "Failed to read %s\n", input_filename); exit(-1); }
+    int64_t max_label;
+    if (fread(&max_label, sizeof(int64_t), 1, rfp) != 1) { fprintf(stderr, "Failed to read %s\n", input_filename); exit(-1); }
 
     // write the header for the output file
-    if (fwrite(&(grid_size[IB_Z]), sizeof(long), 1, wfp) != 1) { fprintf(stderr, "Failed to write to %s\n", output_filename); exit(-1); }
-    if (fwrite(&(grid_size[IB_Y]), sizeof(long), 1, wfp) != 1) { fprintf(stderr, "Failed to write to %s\n", output_filename); exit(-1); }
-    if (fwrite(&(grid_size[IB_X]), sizeof(long), 1, wfp) != 1) { fprintf(stderr, "Failed to write to %s\n", output_filename); exit(-1); }
-    if (fwrite(&max_label, sizeof(long), 1, wfp) != 1) { fprintf(stderr, "Failed to write to %s\n", output_filename); exit(-1); }
+    if (fwrite(&(grid_size[IB_Z]), sizeof(int64_t), 1, wfp) != 1) { fprintf(stderr, "Failed to write to %s\n", output_filename); exit(-1); }
+    if (fwrite(&(grid_size[IB_Y]), sizeof(int64_t), 1, wfp) != 1) { fprintf(stderr, "Failed to write to %s\n", output_filename); exit(-1); }
+    if (fwrite(&(grid_size[IB_X]), sizeof(int64_t), 1, wfp) != 1) { fprintf(stderr, "Failed to write to %s\n", output_filename); exit(-1); }
+    if (fwrite(&max_label, sizeof(int64_t), 1, wfp) != 1) { fprintf(stderr, "Failed to write to %s\n", output_filename); exit(-1); }
 
     // add padding around each segment (only way that populate offsets works!!)
     grid_size[IB_Z] += 2;
@@ -581,27 +581,27 @@ void CppTopologicalThinning(const char *prefix, long skeleton_resolution[3], con
     row_size = grid_size[IB_X];
     PopulateOffsets();
 
-    for (long label = 0; label < max_label; ++label) {
+    for (int64_t label = 0; label < max_label; ++label) {
         // get the number of points for this label
-        long num;
-        if (fread(&num, sizeof(long), 1, rfp) != 1) { fprintf(stderr, "Failed to read %s\n", input_filename); exit(-1); }
+        int64_t num;
+        if (fread(&num, sizeof(int64_t), 1, rfp) != 1) { fprintf(stderr, "Failed to read %s\n", input_filename); exit(-1); }
 
         // create array for this label
         segmentation = new unsigned char[nentries];
-        for (long iv = 0; iv < nentries; ++iv) 
+        for (int64_t iv = 0; iv < nentries; ++iv)
             segmentation[iv] = 0;
 
         // read all of the downsampled locations
-        long *elements = new long[num];
-        if (fread(elements, sizeof(long), num, rfp) != (unsigned long)num) { fprintf(stderr, "Failed to read %s\n", input_filename); exit(-1); }
+        int64_t *elements = new int64_t[num];
+        if (fread(elements, sizeof(int64_t), num, rfp) != (uint64_t)num) { fprintf(stderr, "Failed to read %s\n", input_filename); exit(-1); }
 
-        for (long iv = 0; iv < num; ++iv) {
-            long element = elements[iv];
+        for (int64_t iv = 0; iv < num; ++iv) {
+            int64_t element = elements[iv];
 
             // convert the element to non-cropped iz, iy, ix
-            long iz = element / ((grid_size[IB_X] - 2) * (grid_size[IB_Y] - 2));
-            long iy = (element - iz * (grid_size[IB_X] - 2) * (grid_size[IB_Y] - 2)) / (grid_size[IB_X] - 2);
-            long ix = element % (grid_size[IB_X] - 2);
+            int64_t iz = element / ((grid_size[IB_X] - 2) * (grid_size[IB_Y] - 2));
+            int64_t iy = (element - iz * (grid_size[IB_X] - 2) * (grid_size[IB_Y] - 2)) / (grid_size[IB_X] - 2);
+            int64_t ix = element % (grid_size[IB_X] - 2);
 
             // update the element based on the padding
             element = (iz + 1) * sheet_size + (iy + 1) * row_size + ix + 1;
@@ -620,26 +620,26 @@ void CppTopologicalThinning(const char *prefix, long skeleton_resolution[3], con
         }
 
         // write the number of elements
-        if (fwrite(&num, sizeof(long), 1, wfp) != 1) { fprintf(stderr, "Failed to write to %s\n", output_filename); exit(-1); }
+        if (fwrite(&num, sizeof(int64_t), 1, wfp) != 1) { fprintf(stderr, "Failed to write to %s\n", output_filename); exit(-1); }
 
         while (surface_voxels.first != NULL) {
             // get the surface voxels
             ListElement *LE = (ListElement *) surface_voxels.first;
 
             // get the coordinates for this skeleton point in the non-cropped segmentation
-            long iz = LE->iz - 1;
-            long iy = LE->iy - 1;
-            long ix = LE->ix - 1;
-            long iv = iz * (grid_size[IB_X] - 2) * (grid_size[IB_Y] - 2) + iy * (grid_size[IB_X] - 2) + ix;
+            int64_t iz = LE->iz - 1;
+            int64_t iy = LE->iy - 1;
+            int64_t ix = LE->ix - 1;
+            int64_t iv = iz * (grid_size[IB_X] - 2) * (grid_size[IB_Y] - 2) + iy * (grid_size[IB_X] - 2) + ix;
 
             // endpoints are written as negatives
             if (IsEndpoint(LE->iv)) iv = -1 * iv;
-            if (fwrite(&iv, sizeof(long), 1, wfp) != 1) { fprintf(stderr, "Failed to write to %s\n", output_filename); exit(-1); }
+            if (fwrite(&iv, sizeof(int64_t), 1, wfp) != 1) { fprintf(stderr, "Failed to write to %s\n", output_filename); exit(-1); }
 
             // remove this voxel
             RemoveSurfaceVoxel(LE);
         }
-        
+
         // free memory
         delete[] segmentation;
 
@@ -650,7 +650,7 @@ void CppTopologicalThinning(const char *prefix, long skeleton_resolution[3], con
     // close the I/O files
     fclose(rfp);
     fclose(wfp);
-        
+
     delete[] lut_simple;
     delete[] lut_isthmus;
 }
