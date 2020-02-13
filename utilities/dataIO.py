@@ -42,16 +42,16 @@ def ReadSegmentationData(prefix):
 
 
 
-def ReadSkeletons(prefix, skeleton_algorithm='thinning', downsample_resolution=(80, 80, 80), params='00'):
+def ReadSkeletons(prefix, skeleton_algorithm='thinning', downsample_resolution=(80, 80, 80)):
     # read in all of the skeleton points
-    skeleton_filename = 'skeletons/{}/{}-{:03d}x{:03d}x{:03d}-upsample-{}-skeleton.pts'.format(prefix, skeleton_algorithm, downsample_resolution[IB_X], downsample_resolution[IB_Y], downsample_resolution[IB_Z], params)
-    endpoint_filename = 'skeletons/{}/{}-{:03d}x{:03d}x{:03d}-endpoint-vectors.vec'.format(prefix, skeleton_algorithm, downsample_resolution[IB_X], downsample_resolution[IB_Y], downsample_resolution[IB_Z], params)
+    skeleton_filename = 'skeletons/{}/{}-{:03d}x{:03d}x{:03d}-upsample-skeleton.pts'.format(prefix, skeleton_algorithm, downsample_resolution[IB_X], downsample_resolution[IB_Y], downsample_resolution[IB_Z])
+    endpoint_filename = 'skeletons/{}/{}-{:03d}x{:03d}x{:03d}-endpoint-vectors.vec'.format(prefix, skeleton_algorithm, downsample_resolution[IB_X], downsample_resolution[IB_Y], downsample_resolution[IB_Z])
 
     # read the joints file and the vector file
     with open(skeleton_filename, 'rb') as sfd, open(endpoint_filename, 'rb') as efd:
         skel_zres, skel_yres, skel_xres, skel_max_label, = struct.unpack('qqqq', sfd.read(32))
         end_zres, end_yres, end_xres, end_max_label, = struct.unpack('qqqq', efd.read(32))
-        assert (skel_zres == end_zres and skel_yres == end_yres and skel_xres == end_xres and skel_max_label == end_max_label)    
+        assert (skel_zres == end_zres and skel_yres == end_yres and skel_xres == end_xres and skel_max_label == end_max_label)
 
         # create an array of skeletons
         skeletons = []
