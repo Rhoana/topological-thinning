@@ -12,6 +12,12 @@ from topological_thinning.utilities.constants import *
 
 
 
+def GridSize(prefix):
+    # return the size of this dataset
+    return meta_data.MetaData(prefix).GridSize()
+
+
+
 def ReadMetaData(prefix):
     # return the meta data for this prefix
     return meta_data.MetaData(prefix)

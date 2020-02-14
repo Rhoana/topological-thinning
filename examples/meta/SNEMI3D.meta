@@ -2,3 +2,5 @@
 6x6x30
 # segmentation filename
 segmentations/SNEMI3D.h5 main
+# grid size
+1024x1024x100

@@ -20,7 +20,14 @@ class MetaData:
                     self.resolution = (float(samples[2]), float(samples[1]), float(samples[0]))
                 elif comment == '# segmentation filename':
                     self.segmentation_filename = value
+                elif comment == '# grid size':
+                    # read the grid size in x, y, z order
+                    samples = value.split('x')
+                    self.grid_size = (int(samples[2]), int(samples[1]), int(samples[0]))
 
+    def GridSize(self):
+        return self.grid_size
+                    
     def Resolution(self):
         return self.resolution
 

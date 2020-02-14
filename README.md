@@ -20,8 +20,10 @@ All datasets are referenced using a meta file. The meta file should have the for
 6x6x30
 # segmentation filename
 segmentations/SNEMI3D.h5 main
+# grid size
+1024x1024x100
 ```
-where the resolution represents the imaging resolution of the dataset and the segmentation filename is a path to the dataset with the accompanying h5 dataset name.
+where the resolution represents the imaging resolution of the dataset, the segmentation filename is a path to the dataset with the accompanying h5 dataset name, and the grid size is the number of voxels in each dimension. Resolution and Grid Sizes are (x, y, z) format.
 
 
 ## Example Script
